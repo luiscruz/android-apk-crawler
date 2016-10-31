@@ -1,5 +1,6 @@
 apks/
 tmp/
+*.csv
 
 #OS X files
 .DS_Store
