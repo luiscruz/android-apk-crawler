@@ -5,8 +5,6 @@ import sys
 from subprocess import check_output
 import click
 
-
-APK_DIR="./apks/"
 KEYWORDS=(
     "Landroid/app/job/JobInfo/Builder;->build",
     "Lcom/google/android/gms/gcm/PeriodicTask/Builder;->build",
