@@ -3,6 +3,8 @@ import glob
 import os.path
 import sys
 from subprocess import check_output
+import click
+
 
 APK_DIR="./apks/"
 KEYWORDS=(
@@ -25,8 +27,8 @@ KEYWORDS=(
     "Landroid/os/Handler;->sendMessageDelayed",
 )
 
-def printm(msg):
-    sys.stdout.write(str(msg))
+def printm(msg, file=sys.stdout):
+    file.write(str(msg))
     
 def get_version_name(apk):
     return check_output(["manifest-reader","--version-name","--apk",apk]).replace("\n","")
@@ -45,23 +47,35 @@ def get_occurrences(decoded_apk, keywords):
             result[key] = count
     return result 
 
+@click.command()
+@click.option('--apks', default="./apks/", help='Path to directory with all apks. Defaults to "./apks"')
+@click.option('--output-file', prompt="Output CSV file", help='File to save the CSV output.')
+def tool(apks, output_file):
+    """Tool to analyze Android applications through there APKs."""
     
-
-print "App,Version,Package,AndroidVersion,"+",".join(KEYWORDS)
-for file in glob.glob(APK_DIR+"*.apk"):
-    filename=os.path.basename(file)
-    project = os.path.splitext(filename)[0]
-    decoded_apk = "./tmp/%s"%project
-    printm(project)
-    printm(',')
-    printm(get_version_name(file))
-    printm(',')
-    printm(get_package_name(decoded_apk))
-    printm(',')
-    printm(get_sdk_version(decoded_apk))
-    occurrences = get_occurrences(decoded_apk,KEYWORDS)
-    for key in KEYWORDS:
-        printm(',')
-        printm(occurrences[key])
-    print
-    
+    with open(output_file, 'a') as f:
+        print >>f, "App,Version,Package,AndroidVersion,"+",".join(KEYWORDS)
+    apk_files = glob.glob(apks+"*.apk")
+        
+    with click.progressbar(
+        apk_files,
+        fill_char=click.style("#", fg='blue')
+    ) as apk_files_bar:
+        for file in apk_files_bar:
+            filename=os.path.basename(file)
+            project = os.path.splitext(filename)[0]
+            decoded_apk = "./tmp/%s"%project
+            occurrences = get_occurrences(decoded_apk,KEYWORDS)
+            line = ",".join([
+                project,
+                get_version_name(file),
+                get_package_name(decoded_apk),
+                get_sdk_version(decoded_apk),
+            ]+[
+                str(occurrences[key]) for key in KEYWORDS
+            ])
+            with open(output_file, 'a') as f:
+                print >> f, line
+            
+if __name__ == '__main__':
+    tool()
