@@ -16,6 +16,8 @@ Options:
 ```
 ## Install
 
+1. Make sure you have [APKTool](https://ibotpeaches.github.io/Apktool/install/) installed
+1. Run the following instructions on your terminal:
 ```bash
 $git clone https://github.com/luiscruz/android-apk-crawler.git
 $cd android-apk-crawler
