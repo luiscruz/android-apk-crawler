@@ -75,7 +75,7 @@ def get_min_sdk_version(decoded_apk):
 def get_occurrences(decoded_apk, keywords):
     result = dict.fromkeys(keywords, 0)
     raw_output = check_output(
-        "grep -rhoE \""
+        "grep -rhoE \"" +
         "|".join(keywords) + "\" " + decoded_apk +
         "| sort | awk '{ print $1 }' | uniq -c", shell=True)
     for line in raw_output.split(os.linesep):

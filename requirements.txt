@@ -1,2 +1,4 @@
 pyyaml
 click
+flake8
+pbr
