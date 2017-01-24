@@ -95,7 +95,7 @@ def get_occurrences(decoded_apk, keywords):
     prompt="Output CSV file",
     help='File to save the CSV output.')
 def tool(apks, output_file):
-    """Tool to analyze Android applications through there APKs."""
+    """Tool to analyze Android applications through their APKs."""
 
     with open(output_file, 'a') as f:
         print >> f, "App,Version,Package,AndroidVersion,minSdkVersion," \
