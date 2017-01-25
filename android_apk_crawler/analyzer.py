@@ -7,6 +7,9 @@ import click
 import yaml
 import time
 
+# https://developer.android.com/topic/performance/scheduling.html
+# https://developer.android.com/training/monitoring-device-state/doze-standby.html
+
 KEYWORDS = (
     "Landroid/app/job/JobInfo/Builder;->build",
     "Lcom/google/android/gms/gcm/PeriodicTask/Builder;->build",
@@ -19,6 +22,8 @@ KEYWORDS = (
     "Landroid/app/AlarmManager;->set",
     "Landroid/app/AlarmManager;->setAndAllowWhileIdle",
     "Landroid/app/AlarmManager;->setAlarmClock",
+    "Lcom/firebase/jobdispatcher/FirebaseJobDispatcher;->newJobBuilder",
+    "Lcom/evernote/android/job/JobRequest;->Builder",
     "Landroid/os/Handler;->post",
     "Landroid/os/Handler;->postDelayed",
     "Landroid/os/Handler;->sendEmptyMessage",
@@ -36,7 +41,7 @@ def get_version_name(apk):
     return subprocess.check_output([
         "manifest-reader",
         "--version-name",
-        "--apk", apk
+        "--apk", apk,
     ]).replace("\n", "")
 
 
@@ -44,7 +49,7 @@ def get_package_name(decoded_apk):
     return subprocess.check_output([
         "manifest-reader",
         "--package-name",
-        decoded_apk + "/AndroidManifest.xml"
+        decoded_apk + "/AndroidManifest.xml",
     ]).replace("\n", "")
 
 
@@ -52,7 +57,7 @@ def get_sdk_version(decoded_apk):
     return subprocess.check_output([
         "manifest-reader",
         "--android-sdk-version",
-        decoded_apk + "/AndroidManifest.xml"
+        decoded_apk + "/AndroidManifest.xml",
     ]).replace("\n", "")
 
 
@@ -78,7 +83,8 @@ def get_occurrences(decoded_apk, keywords):
     raw_output = subprocess.check_output(
         "grep -rhoE \"" +
         "|".join(keywords) + "\" " + decoded_apk +
-        "| sort | awk '{ print $1 }' | uniq -c", shell=True)
+        "| sort | awk '{ print $1 }' | uniq -c",
+        shell=True)
     for line in raw_output.split(os.linesep):
         if line:
             count, key = line.strip().split(' ')
@@ -88,8 +94,9 @@ def get_occurrences(decoded_apk, keywords):
 
 def decode_apk(apk, output_dir):
     subprocess.check_output(
-        "apktool d {} -o {}".format(apk,output_dir),
+        "apktool d {} -o {}".format(apk, output_dir),
         shell=True,
+        stderr=subprocess.STDOUT
     )
 
 
@@ -102,14 +109,11 @@ def decode_apk(apk, output_dir):
     '--output-file', '-o',
     prompt="Output CSV file",
     help='File to save the CSV output.')
-@click.option(
-    '--exectime', '-t', is_flag=True,
-    help='print execution time')
-def tool(apks, output_file, exectime):
+def tool(apks, output_file):
     """Tool to analyze Android applications through their APKs."""
 
-    if exectime:
-        start_time = time.time()
+    start_time = time.time()
+    skipped_projects = []
 
     if not os.path.exists(output_file):
         with open(output_file, 'a') as f:
@@ -123,32 +127,42 @@ def tool(apks, output_file, exectime):
         empty_char=' ',
         show_percent=True,
         show_pos=True,
+        item_show_func=lambda item: item
     ) as apk_files_bar:
         for file in apk_files_bar:
             filename = os.path.basename(file)
             project = os.path.splitext(filename)[0]
             decoded_apk = "./tmp/{}".format(project)
-            if not os.path.exists(decoded_apk):
-                decode_apk(file, decoded_apk)
-            occurrences = get_occurrences(decoded_apk, KEYWORDS)
-            line = ",".join([
-                project,
-                get_version_name(file),
-                get_package_name(decoded_apk),
-                get_sdk_version(decoded_apk),
-                get_min_sdk_version(decoded_apk) or "NA",
-            ] + [
-                str(occurrences[key]) for key in KEYWORDS
-            ])
-            with open(output_file, 'a') as f:
-                print >> f, line
+            try:
+                if not os.path.exists(decoded_apk):
+                    decode_apk(file, decoded_apk)
+                occurrences = get_occurrences(decoded_apk, KEYWORDS)
+                line = ",".join([
+                    project,
+                    get_version_name(file),
+                    get_package_name(decoded_apk),
+                    get_sdk_version(decoded_apk),
+                    get_min_sdk_version(decoded_apk) or "NA",
+                ] + [
+                    str(occurrences[key]) for key in KEYWORDS
+                ])
+                with open(output_file, 'a') as f:
+                    print >> f, line
+            except subprocess.CalledProcessError:
+                skipped_projects.append(project)
 
-    if exectime:
+    click.secho(
+        "Processed {} files in {:.1f} minutes.".format(
+            len(apk_files),
+            (time.time() - start_time) / 60),
+        fg='blue'
+    )
+
+    if skipped_projects:
         click.secho(
-            "Processed {} files in {:.1f} minutes.".format(
-                len(apk_files),
-                (time.time() - start_time) / 60),
-            fg='blue'
+            "Skipped {} apps:\n".format(len(skipped_projects)) +
+            "\n".join(skipped_projects),
+            fg='red'
         )
 
 
