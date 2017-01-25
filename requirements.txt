@@ -2,4 +2,4 @@ pyyaml
 click
 flake8
 pbr
--e git+https://github.com/luiscruz/manifest-reader.git@master#egg=manifest_reader
+-e git+https://github.com/luiscruz/manifest-reader.git@master#egg=manifest-reader
