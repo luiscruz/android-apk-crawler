@@ -20,5 +20,6 @@ Options:
 1. Make sure you have [APKTool](https://ibotpeaches.github.io/Apktool/install/) installed
 1. Run the following instructions on your terminal:
 ```bash
+$pip install git+https://github.com/luiscruz/manifest-reader.git@master
 $pip install git+https://github.com/luiscruz/android-apk-crawler.git@master
 ```
