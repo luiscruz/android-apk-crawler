@@ -1,5 +1,6 @@
 # android-apk-crawler
-Project to analyse real Android applications
+Project to analyze Android APKs regarding their approach to schedule tasks.
+It provides a complement to Android apps' energy efficiency studies.
 
 ## Usage
 
@@ -23,3 +24,11 @@ Options:
 $pip install git+https://github.com/luiscruz/manifest-reader.git@master
 $pip install git+https://github.com/luiscruz/android-apk-crawler.git@master
 ```
+
+## Use case
+
+This tool was tested with the APKs available
+[here](http://sccpu2.cse.ust.hk/elite/downloadApks.html). It provides a dataset
+with 44,736 Android apps, and it was collected between March 2015 and January
+2016.
+
