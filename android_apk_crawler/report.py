@@ -4,6 +4,7 @@ import sys
 import click
 import time
 import pandas
+import matplotlib.pyplot as plt
 
 KEYWORDS = [
     "Landroid/app/job/JobInfo/Builder;->build",
@@ -17,12 +18,13 @@ KEYWORDS = [
     "Landroid/app/AlarmManager;->set",
     "Landroid/app/AlarmManager;->setAndAllowWhileIdle",
     "Landroid/app/AlarmManager;->setAlarmClock",
-   "Lcom/firebase/jobdispatcher/FirebaseJobDispatcher;->newJobBuilder",
+    "Lcom/firebase/jobdispatcher/FirebaseJobDispatcher;->newJobBuilder",
+    "Lcom/evernote/android/job/JobRequest;->Builder",
 ]
 
 @click.command()
 @click.option(
-    '--input', '-i'
+    '--input', '-i',
     prompt="Input CSV files",
     help='CSV files to be used.')
 @click.option(
@@ -36,12 +38,19 @@ def tool(input, output_dir):
 
     df = pandas.read_csv(input)
     print df[KEYWORDS].sum()
+    
+    plt.figure()
     df[KEYWORDS].sum().plot(kind="bar")
+    plt.savefig(output_dir+'/plot_api_occurence.png')
+    
+    plt.figure()
     df['minSdkVersion'].hist()
+    plt.savefig(output_dir+'/hist_minsdk.png')
     
     click.secho(
         "Generated reports in {:.1f} minutes.".format(
-            (time.time() - start_time) / 60)
+            (time.time() - start_time) / 60
+        ),
         fg='blue'
     )
 
